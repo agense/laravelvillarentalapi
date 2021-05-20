@@ -41,6 +41,9 @@ class ApiRouteDisplayService {
         foreach($data as $key => $value){
             if(is_numeric($key)){
                 $output .= self::tableLoop($data);
+            }elseif(count($value) == 1){
+                $output .= "<h4>".ucfirst($key)."</h4>";
+                $output .= self::tableLoop($value);
             }else{
                 $output .= self::recursiveLoop($data);
                 unset($data[$key]);
@@ -89,7 +92,7 @@ class ApiRouteDisplayService {
                 return self::recursiveLoop($value, $output);
                 
             }elseif(is_array($value) && is_numeric(array_key_first($value))) {
-               $output .= !is_numeric($key) ? "<h4>".ucfirst($key)."</h4>" : "<h4>Other</h4>";
+               $output .= !is_numeric($key) ? "<h5>".ucfirst($key)."</h5>" : "<h5>Other</h5>";
                $output .= self::tableLoop($value);
 
                 //Unset looped through level

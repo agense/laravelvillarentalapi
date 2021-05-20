@@ -19,8 +19,15 @@ Route::get('routes', function () {
     return response()->json((new ApiRouteDisplayService)->readData());
 });
 
+// Authentication routes
+Route::prefix('auth')->group(function(){
+    Route::post('login', 'AuthenticationController@login');
+    Route::post('logout', 'AuthenticationController@logout')->middleware('auth:sanctum');
+    Route::post('register', 'AuthenticationController@register');
+});
+
 // ADMIN SYSTEM ROUTES
-Route::prefix('admin')->namespace('Admin')->group(function(){
+Route::prefix('admin')->namespace('Admin')->middleware('auth:sanctum')->group(function(){
 
     Route::resource('regions', 'RegionsController')->except(['show','create', 'edit']);
 

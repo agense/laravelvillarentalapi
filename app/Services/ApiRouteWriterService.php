@@ -8,7 +8,8 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Collection;
 
 class ApiRouteWriterService {
-
+    
+    const CUSTOM_WORDS = ['login', 'logout', 'register'];
     private $groupingLevel;
 
     public function __construct(){
@@ -89,19 +90,24 @@ class ApiRouteWriterService {
      */
     private function createAutoDescription(Array $item):String
     {
+        $uri = explode('/', $item['uri']);
         $output = "";
-        // Describe Action
-        if($item['method'] == "GET" || $item['method'] == "GET|HEAD"){
-            $output .= "Get ";
-        }elseif($item['method'] == "POST" || $item['method'] == "POST|HEAD"){
-            $output .= "Create ";
-        }elseif($item['method'] == "PUT" || $item['method'] == "PATCH" || $item['method'] == "PUT|PATCH"){
-            $output .= "Update ";
-        }elseif($item['method'] == "DELETE"){
-            $output .= "Delete ";
+
+        if( empty(array_intersect($uri, self::CUSTOM_WORDS)) ){
+            // Describe Action
+            if($item['method'] == "GET" || $item['method'] == "GET|HEAD"){
+                $output .= "Get ";
+            }elseif($item['method'] == "POST" || $item['method'] == "POST|HEAD" ){
+                $output .= "Create ";
+            }elseif($item['method'] == "PUT" || $item['method'] == "PATCH" || $item['method'] == "PUT|PATCH"){
+                $output .= "Update ";
+            }elseif($item['method'] == "DELETE"){
+                $output .= "Delete ";
+            }
         }
+
         //Describe Resource
-        if(count(explode('/', $item['uri'])) <= 2){
+        if(count($uri) <= 2){
             $resource = self::getUriParam($item, 1);
             $output.= $resource;
         }else{
@@ -116,7 +122,7 @@ class ApiRouteWriterService {
                 $output.= ($item['method'] == "POST" || $item['method'] == "POST|HEAD" ) ? Str::singular($resource) : $resource;
             }
         }
-        return $output;
+        return trim(ucfirst($output));
     }
 
     /**
