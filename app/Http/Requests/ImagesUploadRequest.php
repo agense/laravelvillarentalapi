@@ -8,14 +8,18 @@ use App\Rules\ValidFileSize;
 
 class ImagesUploadRequest extends FormRequest
 {
+    private $villa;
+
+    public function __construct(){
+        $this->villa = request()->villa;
+    }
     /**
      * Determine if the user is authorized to make this request.
-     *
      * @return bool
      */
     public function authorize()
     {
-        return true;
+       return auth()->user()->can('update', $this->villa);
     }
 
     /**

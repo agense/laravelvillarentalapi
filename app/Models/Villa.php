@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Services\ImageStorageService;
+use App\Models\Account;
+use App\Traits\Calendar;
 use App\Models\VillaImage;
 use Illuminate\Support\Str;
+use App\Services\ImageStorageService;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Collection;
-use App\Traits\Calendar;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Villa extends Model
 {
@@ -105,6 +106,13 @@ class Villa extends Model
         return $this->hasMany('App\Models\Price');
     }
 
+    /**
+     * Relationship with Account Model
+    */
+    public function account(){
+        return $this->belongsTo('App\Models\Account');
+    }
+
     // GETTERS
 
     public function getFillable()
@@ -124,28 +132,65 @@ class Villa extends Model
         return self::AREA_MEASUREMENT_UNIT;
     }
 
+    // Query Scopes
+    /**
+     * Scope a query to only include users of type system admin.
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeOwnedBy($query, Account $account)
+    {
+        return $query->where('account_id', $account->id);
+    }
+
     // MODEL METHODS
+
+    /**
+     * Checks if a villa belongs to specific supplier account
+     * @param Account $account
+     * @return Bool
+     */
+    public function isOwnedBy(Account $account){
+        return $this->account_id == $account->id;
+    }
+
     /**
      * Creates new villa and attaches relational data
+     * @return self
      */
-    public function createNew()
+    public static function createNew()
     {
-        $this->fill( request()->only($this->getFillable()));
-        $this->save();
+        $account = auth()->user()->account;
+        if(!$account || !$account->isSupplier()){
+            abort(403, 'Invalid Account');
+        }
+        $villa = new self();
+        $villa->fill( request()->only($villa->getFillable()));
+        $villa->account()->associate($account->id);
+        $villa->save();
         
         if(request()->has('facilities')){
-            $this->addFacilities(request()->facilities);
+            $villa->addFacilities(request()->facilities);
         }
 
         if(request()->has('categories')){
-            $this->addCategories(request()->categories);
+            $villa->addCategories(request()->categories);
         }
         
         //upload images
         if(request()->has('images')){
-            $this->uploadImages(request()->images);
+            $villa->uploadImages(request()->images);
         }
-        return $this;
+        return $villa;
+    }
+
+    /**
+     * Update fillable properties
+     * @return void
+     */
+    public function updateData(){
+        $this->fill( request()->only($this->getFillable()));
+        $this->save();
     }
 
     /**

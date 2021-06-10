@@ -10,7 +10,6 @@ class VillaRelationUpdateResource extends JsonResource
 {
     private $message;
     private $modified;
-    private $baseUrl;
     private $modification;
 
     public function __construct($resource, Collection $modified, String $relation, String $message = null) {
@@ -19,7 +18,6 @@ class VillaRelationUpdateResource extends JsonResource
         $this->relation = $relation;
         $this->modified = $modified;
         $this->message = $message; 
-        $this->baseUrl = config('app.url');
         $this->modification = request()->isMethod('delete') ? "removed" : "added";
     }
     /**
@@ -38,7 +36,7 @@ class VillaRelationUpdateResource extends JsonResource
             "villa" => [
                 "id" => $this->id,
                 "name" => $this->name,
-                "url" => $this->baseUrl."/api/admin/villas/".$this->id,
+                "url" => route('villas.show', $this->id),
             ]
         ];
     }

@@ -84,6 +84,7 @@ trait Calendar
 
         //Return full period
         $fullPeriod = array_merge($this->{$this->relation}->toArray(), $newData);
+
         return collect($fullPeriod)->sortBy('date')->toArray();
     }
 

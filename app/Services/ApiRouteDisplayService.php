@@ -41,7 +41,7 @@ class ApiRouteDisplayService {
         foreach($data as $key => $value){
             if(is_numeric($key)){
                 $output .= self::tableLoop($data);
-            }elseif(count($value) == 1){
+            }elseif(count($value) == 1 && !is_array($value)){
                 $output .= "<h4>".ucfirst($key)."</h4>";
                 $output .= self::tableLoop($value);
             }else{

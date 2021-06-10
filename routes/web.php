@@ -1,8 +1,6 @@
 <?php
-
 use Illuminate\Support\Facades\Route;
 use App\Services\ApiRouteDisplayService;
-
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -18,4 +16,3 @@ Route::get('/', function () {
     $routeTable = (new ApiRouteDisplayService)->displayDataAsHtml();
     return view('welcome', compact('routeTable'));
 });
-

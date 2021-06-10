@@ -2,29 +2,34 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
+use App\Models\Facility;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Gate;
 use App\Http\Requests\FacilityRequest;
 use App\Http\Resources\FacilityResource;
 use App\Http\Resources\FacilityCollection;
-use App\Models\Facility;
 
 class FacilitiesController extends Controller
 {
+    public function __construct(){
+        $this->middleware('can:manage-app')->except('index');
+    }
     /**
      * Display a listing of facilities
-     * @return \Illuminate\Http\Response
+     * @return \App\Http\Resources\FacilityCollection
      */
     public function index()
     {
-         $facilities = Facility::orderBy('name')->get();
-         return new FacilityCollection($facilities);
+        Gate::authorize('access-admin');
+        $facilities = Facility::orderBy('name')->get();
+        return new FacilityCollection($facilities);
     }
 
     /**
      * Store a newly created facility in storage
      * @param  \App\Http\Requests\FacilityRequest $request
-     * @return \Illuminate\Http\Response
+     * @return \App\Http\Resources\FacilityResource
      */
     public function store(FacilityRequest $request)
     {
@@ -36,12 +41,11 @@ class FacilitiesController extends Controller
      * Update the specified facility in storage
      * @param  \App\Http\Requests\FacilityRequest $request
      * @param  \App\Models\Facility $facility
-     * @return \Illuminate\Http\Response
+     * @return \App\Http\Resources\FacilityResource
      */
     public function update(FacilityRequest $request, Facility $facility)
     {
-        $facility->name = $request->name;
-        $facility->type = $request->type;
+        $facility->fill($request->only('name','type'));
         $facility->save();
         return new FacilityResource($facility, "Facility updated");
     }

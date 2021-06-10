@@ -5,11 +5,13 @@
  */
 namespace App\Services;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+
 use Illuminate\Support\Collection;
 
 class ApiRouteWriterService {
     
-    const CUSTOM_WORDS = ['login', 'logout', 'register'];
+    const CUSTOM_WORDS = ['login', 'logout', 'register', 'regenerate-password', 'reset-password'];
     private $groupingLevel;
 
     public function __construct(){
@@ -112,17 +114,26 @@ class ApiRouteWriterService {
             $output.= $resource;
         }else{
             $resource = self::getUriParam($item, 3);
-            if( $resource !== null && Str::startsWith($resource, '{')){
-                $output.= Str::replaceFirst("}", "", Str::replaceFirst("{", "", $resource));
+            if( $resource !== null ){
+                if(Str::startsWith($resource, '{')){
+                    if($resource == '{id}'){
+                        $output.= Str::singular(self::getUriParam($item, 2)).' by id';
+                    }else{
+                        $output.= Str::replaceFirst("}", "", Str::replaceFirst("{", "", $resource));
+                    }
+                    $specific = self::getUriParam($item, 4);   
+                    $output.= ($specific !== null) ? " $specific" : "";
+                }else{
+                    $prm = self::getUriParam($item, 2);
+                    $output.= (Str::contains( $item['uri'], '{'.Str::singular($prm).'}')) ? $resource.' '.Str::singular($prm) : $resource.' '.$prm;
+                }
                 
-                $specific = self::getUriParam($item, 4);   
-                $output.= ($specific !== null) ? " $specific" : "";
             }else{
                 $resource = self::getUriParam($item, 2);
-                $output.= ($item['method'] == "POST" || $item['method'] == "POST|HEAD" ) ? Str::singular($resource) : $resource;
+                $output.= ($item['method'] == "POST" || $item['method'] == "POST|HEAD") ? Str::singular($resource) : $resource;
             }
         }
-        return trim(ucfirst($output));
+        return trim(ucfirst(str_replace('-', ' ', $output)));
     }
 
     /**

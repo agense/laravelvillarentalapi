@@ -2,26 +2,26 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
-use App\Rules\ValidFacility;
-use App\Rules\ValidCategory;
-use App\Rules\ValidFileExtension;
-use App\Rules\ValidFileSize;
-use App\Models\Facility;
+use App\Models\Villa;
 use App\Models\Category;
-
+use App\Models\Facility;
+use App\Rules\ValidCategory;
+use App\Rules\ValidFacility;
+use App\Rules\ValidFileSize;
 use Illuminate\Validation\Rule;
+
+use App\Rules\ValidFileExtension;
+use Illuminate\Foundation\Http\FormRequest;
 
 class CreateVillaRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
-     *
      * @return bool
      */
     public function authorize()
     {
-        return true;
+        return auth()->user()->can('create', Villa::class);
     }
 
     /**
@@ -31,13 +31,11 @@ class CreateVillaRequest extends FormRequest
      */
     public function rules()
     {
-        $existing = $this->villa ? $this->villa->id : "";
-
         $facilities = request()->has('facilities') ? Facility::get('id')->pluck('id')->toArray() : [];
         $categories = request()->has('categories') ? Category::get('id')->pluck('id')->toArray() : [];
 
         return [
-            'name' => ['bail','required','string', 'min:2', 'max:100', Rule::unique('villas','name')->ignore($existing)],
+            'name' => ['bail','required','string', 'min:2', 'max:100', Rule::unique('villas','name')],
             'area' => 'required|numeric',
             'capacity' => 'required|numeric',
             'bedrooms' => 'required|numeric',

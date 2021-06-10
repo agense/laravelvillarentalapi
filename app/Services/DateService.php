@@ -19,7 +19,7 @@ class DateService{
      */
     public static function defaultPeriodEndDate():string
     {
-        return Carbon::now()->addMonth()->endOfMonth()->toDateString();
+        return Carbon::now()->endOfMonth()->toDateString();
     }
     
     /**

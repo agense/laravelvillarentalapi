@@ -2,30 +2,37 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
+use App\Models\Category;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use App\Http\Requests\CategoryRequest;
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\CategoryCollection;
-use App\Models\Category;
 
 
 class CategoriesController extends Controller
 {
+    public function __construct(){
+        $this->middleware('can:manage-app')->except('index');
+    }
     /**
      * Display a listing of the categories.
-     * @return \Illuminate\Http\Response
+     * @return \App\Http\Resources\CategoryCollection
      */
     public function index()
     {
+        Gate::authorize('access-admin');
+        
         $categories = Category::withCount('villas')->orderBy('name')->get();
         return new CategoryCollection($categories);
     }
 
     /**
      * Store a newly created category in storage.
-     * @param  \App\Http\Requests\CategoryRequest  $request
-     * @return \Illuminate\Http\Response
+     * @param  \App\Http\Requests\CategoryRequest $request
+     * @return \App\Http\Resources\CategoryResource
      */
     public function store(CategoryRequest $request)
     {
@@ -36,8 +43,8 @@ class CategoriesController extends Controller
     /**
      * Update the specified category in storage.
      * @param  \App\Http\Requests\CategoryRequest  $request
-     * @param  \App\Models\Category  $category
-     * @return \Illuminate\Http\Response
+     * @param  \App\Models\Category $category
+     * @return \App\Http\Resources\CategoryResource
      */
     public function update(CategoryRequest $request, Category $category)
     {

@@ -2,69 +2,82 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Database\Eloquent\Builder;
+use App\Models\Villa;
+use App\Models\Account;
 use Illuminate\Http\Request;
 
-use App\Http\Requests\CreateVillaRequest;
-use App\Http\Requests\FacilitiesAttachmentRequest;
-use App\Http\Requests\CategoriesAttachmentRequest;
-use App\Http\Requests\ImagesUploadRequest;
-use App\Http\Requests\ImagesDeleteRequest;
-
+use App\Http\Controllers\Controller;
 use App\Http\Resources\VillaResource;
 use App\Http\Resources\VillaCollection;
-use App\Http\Resources\VillaRelationUpdateResource as VillaRelationResource;
+use App\Http\Requests\CreateVillaRequest;
+use App\Http\Requests\UpdateVillaRequest;
 
-use App\Models\Villa;
+use Illuminate\Database\Eloquent\Builder;
+use App\Http\Requests\ImagesDeleteRequest;
+use App\Http\Requests\ImagesUploadRequest;
+
+use App\Http\Requests\CategoriesAttachmentRequest;
+use App\Http\Requests\FacilitiesAttachmentRequest;
+use App\Http\Resources\VillaRelationUpdateResource as VillaRelationResource;
 
 class VillasController extends Controller
 {
     /**
      * Display a listing of all villas
-     * @return \Illuminate\Http\Response
+     * @return \App\Http\Resources\VillaCollection
      */
     public function index()
     {
+        $this->authorize('viewAny',Villa::class);
         $villas = Villa::all();
+        return new VillaCollection($villas);
+    }
+
+    /**
+     * Display a listing of all villas for specific supplier account
+     * @param \App\Models\Account $account
+     * @return \App\Http\Resources\VillaCollection
+     */
+    public function showOwned(Account $account)
+    {
+        $this->authorize('viewOwnedVillas', $account);
+
+        $villas = Villa::ownedBy($account)->get();
         return new VillaCollection($villas);
     }
   
     /**
      * Store a newly created villa in storage
      * @param  \App\Http\Requests\CreateVillaRequest $request
-     * @return \Illuminate\Http\Response
+     * @return \App\Http\Resources\VillaResource
      */
     public function store(CreateVillaRequest $request)
     {
-        $villa = new Villa();
-        $villa = $villa->createNew();
-        
+        $villa = Villa::createNew();
         return new VillaResource($villa, "New villa created");
     }
 
     /**
      * Display the specified villa
-     * @param  $id
-     * @return \Illuminate\Http\Response
+     * @param  int $id
+     * @return \App\Http\Resources\VillaResource
      */
     public function show($id)
     {
         $villa = Villa::WithFullData()->findOrFail($id);
+        $this->authorize('view', $villa);
         return new VillaResource($villa);
     }
 
     /**
      * Update the specified vila in storage
-     * @param  \App\Http\Requests\CreateVillaRequest  $request
-     * @param  \App\Villa  $villa
-     * @return \Illuminate\Http\Response
+     * @param  \App\Http\Requests\UpdateVillaRequest  $request
+     * @param  \App\Models\Villa  $villa
+     * @return \App\Http\Resources\VillaResource
      */
-    public function update(CreateVillaRequest $request, Villa $villa)
+    public function update(UpdateVillaRequest $request, Villa $villa)
     {
-        $villa->fill( $request->only($villa->getFillable()));
-        $villa->save();
-
+        $villa->updateData();
         return new VillaResource($villa, "Villa updated");
     }
 
@@ -72,7 +85,7 @@ class VillasController extends Controller
      * Attach facilities to villa
      * @param \App\Http\Requests\FacilitiesAttachmentRequest $request
      * @param App\Models\Villa $villa
-     * @return \Illuminate\Http\Response
+     * @return \App\Http\Resources\VillaRelationUpdateResource
      */
     public function addFacilities(FacilitiesAttachmentRequest $request, Villa $villa)
     {
@@ -87,7 +100,7 @@ class VillasController extends Controller
      * Detach facilities from villa
      * @param \App\Http\Requests\FacilitiesAttachmentRequest $request
      * @param App\Models\Villa $villa
-     * @return \Illuminate\Http\Response
+     * @return \App\Http\Resources\VillaRelationUpdateResource
      */
     public function removeFacilities(FacilitiesAttachmentRequest $request, Villa $villa)
     {
@@ -101,7 +114,7 @@ class VillasController extends Controller
      * Attach categories to villa 
      * @param \App\Http\Requests\CategoriesAttachmentRequest $request
      * @param App\Models\Villa
-     * @return \Illuminate\Http\Response
+     * @return \App\Http\Resources\VillaRelationUpdateResource
      */
     public function addCategories(CategoriesAttachmentRequest $request, Villa $villa)
     {
@@ -116,7 +129,7 @@ class VillasController extends Controller
      * Detach categories from villa 
      * @param \App\Http\Requests\CategoriesAttachmentRequest $request
      * @param App\Models\Villa
-     * @return \Illuminate\Http\Response
+     * @return \App\Http\Resources\VillaRelationUpdateResource
      */
     public function removeCategories(CategoriesAttachmentRequest $request, Villa $villa)
     {  
@@ -130,7 +143,7 @@ class VillasController extends Controller
      * Upload images and attach to villa
      * @param \App\Http\Requests\ImagesUploadRequest $request
      * @param App\Models\Villa $villa
-     * @return \Illuminate\Http\Response
+     * @return \App\Http\Resources\VillaRelationUpdateResource
      */
     public function uploadImages(ImagesUploadRequest $request, Villa $villa)
     {
@@ -170,12 +183,25 @@ class VillasController extends Controller
 
     // DELETES
     /**
+     * Deactivate specified villa
+     * @param  \App\Models\Villa  $villa
+     * @return \App\Http\Resources\VillaResource
+     */
+    public function deactivate(Villa $villa)
+    {
+        $this->authorize('delete', $villa);
+        $villa->delete();
+        return new VillaResource($villa, "Villa has been deactivated");
+    }
+
+    /**
      * Get Deleted Villa List or a single deleted villa with full data based on param passed
      * @param Int $id optional
-     * @return \Illuminate\Http\Response
+     * @return \App\Http\Resources\VillaCollection
      */
     public function inactive(Int $id = null)
     {
+        $this->authorize('restore', Villa::class);
         if($id !== null){
             $villa = Villa::onlyTrashed()->WithFullData()->findOrFail($id);
             return new VillaResource($villa);
@@ -184,23 +210,13 @@ class VillasController extends Controller
     }
 
     /**
-     * Deactivate specified villa
-     * @param  \App\Villa  $villa
-     * @return \Illuminate\Http\Response
-     */
-    public function deactivate(Villa $villa)
-    {
-        $villa->delete();
-        return new VillaResource($villa, "Villa has been deactivated");
-    }
-
-    /**
      * Restore A Deleted Villa
      * @param Int $id optional
-     * @return \Illuminate\Http\Response
+     * @return \App\Http\Resources\VillaResource
      */
     public function activate(Int $id)
     {
+        $this->authorize('restore', Villa::class);
         $villa = Villa::onlyTrashed()->WithFullData()->findOrFail($id);
         $villa->restore();
         return new VillaResource($villa, "Villa has been activated");
@@ -208,12 +224,14 @@ class VillasController extends Controller
 
     /**
      * Remove the villa and associated data from db
+     * Only villas that have been soft deleted can be permanently deleted
      * @param Int $id optional
      * @return \Illuminate\Http\Response
      */
     public function destroy(Int $id)
     {
-        $villa = Villa::withTrashed()->with('images')->findOrFail($id);
+        $this->authorize('forceDelete', Villa::class);
+        $villa = Villa::onlyTrashed()->with('images')->findOrFail($id);
         $villa->forceDelete();
         return response()->json(['message' => 'Villa and all associated data has been deleted permanently.']);
     }

@@ -22,10 +22,10 @@ class CreateVillasTable extends Migration
             $table->unsignedTinyInteger('bedrooms');
             $table->unsignedTinyInteger('bathrooms');
             $table->text('description');
-            $table->foreignId('city_id')->constrained()->onDelete('cascade');
             $table->string('address');
             $table->timestamps();
             $table->softDeletes();
+            $table->foreignId('city_id')->constrained()->onDelete('cascade');
         });
     }
 

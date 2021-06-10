@@ -2,25 +2,24 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Villa;
+use Illuminate\Http\Request;
 use App\Services\DateService;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\ValidSearchDatesRequest;
 use App\Http\Resources\VillaAvailabilityResource;
 
 class AvailabilitiesController extends Controller
 {
     /**
      * Get Availabilities for specific period per specific villa
-     * @param Request $request - can have start date and end date, otherwise period is from current date till the end of the following month
+     * @param App\Http\Requests\ValidSearchDatesRequest $request
      * @param App\Models\Villa $villa
-     * @return \Illuminate\Http\Response
+     * @return App\Http\Resources\VillaAvailabilityResource
      */
-    public function getAvailability(Request $request, Villa $villa){
-        $request->validate([
-            'start_date' => 'sometimes|date',
-            'end_date' => 'sometimes|date|after:start_date',
-        ]);
+    public function getAvailability(ValidSearchDatesRequest $request, Villa $villa){
+        
+        $this->authorize('view', $villa);
 
         $start = $request->query('start_date') ?? DateService::defaultPeriodStartDate();
         $end = $request->query('end_date') ?? DateService::defaultPeriodEndDate();
@@ -32,11 +31,14 @@ class AvailabilitiesController extends Controller
 
     /**
      * Update Availabilities for specific period per specific villa
-     * @param Request $request - must have start date, end date and availability fields
-     * @param App\Models\Villa $villa
-     * @return \Illuminate\Http\Response
+     * @param  \Illuminate\Http\Request $request - must have start date, end date and availability fields
+     * @param  \App\Models\Villa $villa
+     * @return \App\Http\Resources\VillaAvailabilityResource
      */
     public function updateAvailability(Request $request, Villa $villa){
+        
+        $this->authorize('update', $villa);
+
         $request->validate([
             'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after:start_date',

@@ -9,14 +9,18 @@ use App\Models\Category;
 
 class CategoriesAttachmentRequest extends FormRequest
 {
+    private $villa;
+
+    public function __construct(){
+        $this->villa = request()->villa;
+    }
     /**
      * Determine if the user is authorized to make this request.
-     *
      * @return bool
      */
     public function authorize()
     {
-        return true;
+       return auth()->user()->can('update', $this->villa);
     }
 
     /**
@@ -26,7 +30,7 @@ class CategoriesAttachmentRequest extends FormRequest
     public function rules()
     {
         $categories = Category::get('id')->pluck('id')->toArray();
-        $applied = request()->villa->categories->pluck('id')->toArray();
+        $applied = $this->villa->categories->pluck('id')->toArray();
 
         $rules =  [
             'categories' => ['required', 'array'],

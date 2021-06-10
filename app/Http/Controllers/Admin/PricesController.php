@@ -2,26 +2,25 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Villa;
+use Illuminate\Http\Request;
 use App\Services\DateService;
+use App\Http\Controllers\Controller;
 use App\Http\Resources\VillaPriceResource;
+use App\Http\Requests\ValidSearchDatesRequest;
 
 class PricesController extends Controller
 {
     
     /**
      * Get prices for specific period per speific villa
-     * @param Request $request - can have start date and end date, otherwise period is from current date till the end of the following month
-     * @param App\Models\Villa $villa
-     * @return \Illuminate\Http\Response
+     * @param  \App\Http\Requests\ValidSearchDatesRequest $request 
+     * @param  \App\Models\Villa $villa
+     * @return \App\Http\Resources\VillaPriceResource
      */
-    public function getPrices(Request $request, Villa $villa){
-        $request->validate([
-            'start_date' => 'sometimes|date',
-            'end_date' => 'sometimes|date|after:start_date',
-        ]);
+    public function getPrices(ValidSearchDatesRequest $request, Villa $villa){
+
+        $this->authorize('view', $villa);
 
         $start = $request->query('start_date') ?? DateService::defaultPeriodStartDate();
         $end = $request->query('end_date') ?? DateService::defaultPeriodEndDate();
@@ -33,11 +32,14 @@ class PricesController extends Controller
 
     /**
      * Update Prices for specific period per specific villa
-     * @param Request $request - must have start date, end date and price fields
-     * @param App\Models\Villa $villa
-     * @return \Illuminate\Http\Response
+     * @param  \Illuminate\Http\Request $request - must have start date, end date and price fields
+     * @param  \App\Models\Villa $villa
+     * @return \App\Http\Resources\VillaPriceResource
      */
     public function updatePrices(Request $request, Villa $villa){
+
+        $this->authorize('update', $villa);
+
         $request->validate([
             'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after:start_date',

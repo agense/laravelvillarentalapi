@@ -2,13 +2,19 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
-use App\Rules\ValidFacility;
 use App\Models\Facility;
+use App\Rules\ValidFacility;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Foundation\Http\FormRequest;
 
 class FacilitiesAttachmentRequest extends FormRequest
 {
+    private $villa;
+
+    public function __construct(){
+        $this->villa = request()->villa;
+    }
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -16,7 +22,7 @@ class FacilitiesAttachmentRequest extends FormRequest
      */
     public function authorize()
     {
-        return true;
+       return auth()->user()->can('update', $this->villa);
     }
 
     /**
@@ -27,7 +33,7 @@ class FacilitiesAttachmentRequest extends FormRequest
     public function rules()
     {
         $facilities = Facility::get('id')->pluck('id')->toArray();
-        $applied = request()->villa->facilities->pluck('id')->toArray();
+        $applied = $this->villa->facilities->pluck('id')->toArray();
 
         $rules = [
             'facilities' => ['required', 'array'],

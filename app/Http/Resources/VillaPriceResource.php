@@ -29,6 +29,7 @@ class VillaPriceResource extends JsonResource
             "villa" => [
                 "id" => $this->id,
                 "name" => $this->name,
+                "url" => route('villas.show', $this->id),
             ],
             "availability_period" => [
                 "from" => $request->start_date ?? DateService::defaultPeriodStartDate(),

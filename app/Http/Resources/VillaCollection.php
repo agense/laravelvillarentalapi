@@ -7,12 +7,9 @@ use App\Models\Villa;
 
 class VillaCollection extends ResourceCollection
 {
-    private $baseUrl;
-
     public function __construct($resource) {
         parent::__construct($resource);
         $this->resource = $resource;
-        $this->baseUrl = config('app.url');
     }
     /**
      * Transform the resource collection into an array.
@@ -32,10 +29,9 @@ class VillaCollection extends ResourceCollection
             $newItem['region'] = $item->city->region->name;
             $newItem['city'] = $item->city->name;
             $newItem['image'] = $item->images->count() > 0 ? new VillaImageResource($item->images->first()) : null;
-            $newItem['link'] = [
-                'method' => 'GET',
-                'url' => $this->baseUrl."/api/admin/villas/".$item->id,
-            ];
+            if($item->deleted_at == null){
+                $newItem['url'] = route('villas.show', $item->id);
+            }
             return $newItem;
         });
 

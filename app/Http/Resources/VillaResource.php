@@ -2,20 +2,19 @@
 
 namespace App\Http\Resources;
 
-use Illuminate\Http\Resources\Json\JsonResource;
-use App\Models\Facility;
 use App\Models\Villa;
+use App\Models\Facility;
+use App\Http\Resources\CategoryCollection;
+use Illuminate\Http\Resources\Json\JsonResource;
 
 class VillaResource extends JsonResource
 {
     private $message;
-    private $baseUrl;
 
     public function __construct($resource, String $message = null) {
         parent::__construct($resource);
         $this->resource = $resource;
         $this->message = $message; 
-        $this->baseUrl = config('app.url');
     }
 
     /**
@@ -25,6 +24,11 @@ class VillaResource extends JsonResource
      */
     public function toArray($request)
     {
+        $this->loadMissing([
+            'account'=> function ($query) {
+                $query->withTrashed();
+            },
+        ]);
         return [
             'message' => $this->when($this->message !== null, $this->message),
             'villa' => [
@@ -44,14 +48,16 @@ class VillaResource extends JsonResource
                 ],
                 'images' => $this->images->count() > 0 ? VillaImageResource::collection($this->images) : [],
                 'description' => $this->description,
-                'categories' => CategoryResource::collection($this->categories),
-                'links' => [
-                    'all_villas' => 
-                        [
-                            'method' => 'GET',
-                            'url' => $this->baseUrl."/api/admin/villas/",
-                        ],
-                ]
+                'categories' => new CategoryCollection($this->categories),
+                'supplier' => $this->when(auth()->user()->isSystemAdmin(), [
+                    'company_name' => $this->account->company_name,
+                    'account_status' => $this->when(!is_null($this->account->deleted_at), 'inactive'),
+                    'account' => $this->when( is_null($this->account->deleted_at), route('accounts.show', $this->account->id)),
+                    'villas' => $this->when(is_null($this->account->deleted_at), route('accounts.villas', $this->account->id)),
+                ]),
+                'deleted_at' => $this->when(!is_null($this->deleted_at), function(){
+                    return $this->deleted_at->format('Y-m-d h:s');
+                }),
             ]
         ];
     }
